@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "GoBron Admin"
+version = "1.0.0"
+id = "artifacts/gobron-admin"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/" ]
+localPort = 20003
+
+[services.development]
+run = "pnpm --filter @workspace/gobron-admin run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/gobron-admin", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/gobron-admin", "run", "serve" ]
+
+[services.env]
+PORT = "20003"
+BASE_PATH = "/"
