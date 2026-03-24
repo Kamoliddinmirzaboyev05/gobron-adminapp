@@ -31,7 +31,7 @@ const PLAN_COLORS: Record<string, { bg: string; text: string; border: string }> 
 export default function ProfileScreen() {
   const c = useColors();
   const { isDark, toggle: toggleDark } = useThemeStore();
-  const { owner, logout } = useAuthStore();
+  const { user: owner, logout } = useAuthStore();
   const { bookings } = useBookingStore();
   const [notifications, setNotifications] = useState(true);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' as 'success' | 'error' });

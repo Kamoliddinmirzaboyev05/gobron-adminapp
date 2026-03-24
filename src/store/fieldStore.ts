@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { Field } from '../types';
 import { backendApi } from '../services/backendApi';
-import { useAuthStore } from './authStore';
 
 interface FieldStore {
   fields: Field[];
@@ -20,11 +19,9 @@ export const useFieldStore = create<FieldStore>((set) => ({
   isLoading: false,
 
   loadMyField: async () => {
-    const token = useAuthStore.getState().accessToken;
-    if (!token) return;
     set({ isLoading: true });
     try {
-      const field = await backendApi.getMyField(token);
+      const field = await backendApi.getMyField();
       set({
         fields: [field],
         activeFieldId: field.id,
@@ -36,9 +33,7 @@ export const useFieldStore = create<FieldStore>((set) => ({
   },
 
   saveMyField: async (data) => {
-    const token = useAuthStore.getState().accessToken;
-    if (!token) return;
-    const field = await backendApi.updateMyField(token, data);
+    const field = await backendApi.updateMyField(data);
     set({
       fields: [field],
       activeFieldId: field.id,

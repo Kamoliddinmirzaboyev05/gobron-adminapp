@@ -23,7 +23,7 @@ export default function LoginScreen() {
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
 
-  const { loginWithBackend, registerWithBackend } = useAuthStore();
+  const { login: authLogin, register: authRegister } = useAuthStore();
 
   const handleAuth = async () => {
     if (!login || !password || (!isLogin && !fullName)) {
@@ -34,11 +34,11 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       if (isLogin) {
-        await loginWithBackend(login, password);
+        await authLogin({ login, password });
       } else {
-        await registerWithBackend(fullName, login, password);
+        await authRegister({ fullName, login, password });
       }
-      router.replace('/(tabs)');
+      // Navigation is handled by the RootLayout
     } catch (error: any) {
       Alert.alert("Auth xatoligi", error?.message || "Xatolik yuz berdi.");
     } finally {

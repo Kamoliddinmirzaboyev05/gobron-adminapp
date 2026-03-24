@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { Booking, BookingStatus } from '../types';
 import { backendApi } from '../services/backendApi';
-import { useAuthStore } from './authStore';
 
 interface BookingStore {
   bookings: Booking[];
@@ -40,11 +39,9 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
   },
 
   loadFromBackend: async () => {
-    const token = useAuthStore.getState().accessToken;
-    if (!token) return;
     set({ isLoading: true });
     try {
-      const bookings = await backendApi.getAdminBookings(token);
+      const bookings = await backendApi.getAdminBookings();
       set({ bookings, isLoading: false });
     } catch {
       set({ isLoading: false });
@@ -52,8 +49,7 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
   },
 
   confirm: async (id) => {
-    const token = useAuthStore.getState().accessToken;
-    if (!token || id.startsWith('b-')) {
+    if (id.startsWith('b-')) {
       set(state => ({
         bookings: state.bookings.map(b =>
           b.id === id ? { ...b, status: 'confirmed' as BookingStatus } : b
@@ -61,15 +57,14 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
       }));
       return;
     }
-    const updated = await backendApi.updateBookingStatus(token, id, 'confirmed');
+    const updated = await backendApi.updateBookingStatus(id, 'confirmed');
     set(state => ({
       bookings: state.bookings.map(b => (b.id === id ? updated : b)),
     }));
   },
 
   reject: async (id, reason) => {
-    const token = useAuthStore.getState().accessToken;
-    if (!token || id.startsWith('b-')) {
+    if (id.startsWith('b-')) {
       set(state => ({
         bookings: state.bookings.map(b =>
           b.id === id ? { ...b, status: 'rejected' as BookingStatus, rejectReason: reason } : b
@@ -77,7 +72,7 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
       }));
       return;
     }
-    const updated = await backendApi.updateBookingStatus(token, id, 'rejected', reason);
+    const updated = await backendApi.updateBookingStatus(id, 'rejected', reason);
     set(state => ({
       bookings: state.bookings.map(b => (b.id === id ? updated : b)),
     }));

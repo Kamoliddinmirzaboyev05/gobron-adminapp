@@ -28,7 +28,7 @@ const todayLabel = `Bugun, ${today.getDate()} ${MONTHS[today.getMonth()]}`;
 
 export default function DashboardScreen() {
   const c = useColors();
-  const { owner, accessToken } = useAuthStore();
+  const { user: owner } = useAuthStore();
   const { getPending, getUpcoming, addIncoming, loadFromBackend } = useBookingStore();
   const { loadMyField } = useFieldStore();
   const [refreshing, setRefreshing] = useState(false);
@@ -46,8 +46,15 @@ export default function DashboardScreen() {
   }, []);
 
   useEffect(() => {
-    loadMyField();
-    loadFromBackend();
+    const init = async () => {
+      try {
+        await loadMyField();
+        await loadFromBackend();
+      } catch (e) {
+        console.error("Dashboard init error:", e);
+      }
+    };
+    init();
   }, []);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {

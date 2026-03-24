@@ -1,60 +1,14 @@
-import { Booking, BookingStatus } from "../mock/bookings";
-import { Field } from "../mock/fields";
+import apiClient from './apiClient';
+import { Booking, BookingStatus } from '../types';
+import { Field } from '../types';
 
-const DEFAULT_API_URL = "http://localhost:3000/api/v1";
-
-const API_BASE_URL = (
-  process.env.EXPO_PUBLIC_API_URL ||
-  process.env.EXPO_PUBLIC_BACKEND_URL ||
-  DEFAULT_API_URL
-).replace(/\/+$/, "");
-
-type LoginPayload = {
-  login: string;
-  password: string;
-};
-
-type RegisterPayload = {
-  fullName: string;
-  login: string;
-  password: string;
-  role: "user" | "admin" | "superadmin";
-};
-
-type BackendLoginResponse = {
-  user: {
-    id: string;
-    fullName: string;
-    login: string;
-    role: string;
-    field?: any;
-  };
-  accessToken: string;
-  refreshToken: string;
-};
-
-type RequestOptions = {
-  method?: "GET" | "POST" | "PATCH" | "PUT";
-  token?: string;
-  body?: unknown;
-};
-
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: options.method || "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
+async function request<T>(path: string, options: { method?: 'GET' | 'POST' | 'PATCH' | 'PUT', body?: unknown } = {}): Promise<T> {
+  const response = await apiClient({
+    method: options.method || 'GET',
+    url: path,
+    data: options.body,
   });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Request failed: ${response.status}`);
-  }
-
-  return (await response.json()) as T;
+  return response.data;
 }
 
 function toDateLabel(dateValue?: string | Date | null): string {
@@ -115,64 +69,19 @@ export function mapBackendBooking(raw: any): Booking {
 }
 
 export const backendApi = {
-  baseUrl: API_BASE_URL,
-
-  async login(payload: LoginPayload): Promise<BackendLoginResponse> {
-    return request<BackendLoginResponse>("/auth/login", {
-      method: "POST",
-      body: payload,
-    });
-  },
-
-  async register(payload: RegisterPayload): Promise<BackendLoginResponse> {
-    return request<BackendLoginResponse>("/auth/register", {
-      method: "POST",
-      body: payload,
-    });
-  },
-
-  async getMe(token: string): Promise<BackendLoginResponse["user"]> {
-    return request<BackendLoginResponse["user"]>("/auth/me", { token });
-  },
-
-  async updateProfile(token: string, data: any): Promise<any> {
-    return request<any>("/auth/profile", {
-      method: "POST",
-      token,
-      body: data,
-    });
-  },
-
-  async getMyField(token: string): Promise<Field> {
-    const raw = await request<any>("/fields/admin/my", { token });
-    return mapBackendField(raw);
-  },
-
-  async updateMyField(token: string, data: Partial<Field>): Promise<Field> {
-    const raw = await request<any>("/fields/admin/my", {
+  login: (payload: any) => request<any>("/auth/login", { method: "POST", body: payload }),
+  register: (payload: any) => request<any>("/auth/register", { method: "POST", body: payload }),
+  getMe: () => request<any>("/auth/me"),
+  getAdminBookings: () => request<Booking[]>("/bookings/admin").then(res => res.map(mapBackendBooking)),
+  updateBookingStatus: (id: string, status: BookingStatus, reason?: string) =>
+    request<any>(`/bookings/${id}/status`, {
       method: "PATCH",
-      token,
-      body: data,
-    });
-    return mapBackendField(raw);
-  },
-
-  async getAdminBookings(token: string): Promise<Booking[]> {
-    const raws = await request<any[]>("/bookings/admin", { token });
-    return raws.map(mapBackendBooking);
-  },
-
-  async updateBookingStatus(
-    token: string,
-    bookingId: string,
-    status: BookingStatus,
-    rejectReason?: string,
-  ): Promise<Booking> {
-    const raw = await request<any>(`/bookings/${bookingId}/status`, {
+      body: { status, reason },
+    }).then(mapBackendBooking),
+  getMyField: () => request<any>("/fields/my-field").then(mapBackendField),
+  updateMyField: (data: Partial<Field>) =>
+    request<any>("/fields/my-field", {
       method: "PATCH",
-      token,
-      body: { status, rejectReason },
-    });
-    return mapBackendBooking(raw);
-  },
+      body: data,
+    }).then(mapBackendField),
 };
